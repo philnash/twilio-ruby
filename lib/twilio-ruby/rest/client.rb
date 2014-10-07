@@ -246,19 +246,19 @@ module Twilio
         @last_request = request
         retries_left = @config[:retry_limit]
         begin
-          response = @connection.request request
-          @last_response = response
-          if response.kind_of? Net::HTTPServerError
+          @last_response = @connection.request(@last_request)
+          if @last_response.kind_of? Net::HTTPServerError
             raise Twilio::REST::ServerError
           end
-        rescue Exception
-          raise if request.class == Net::HTTP::Post
-          if retries_left > 0 then retries_left -= 1; retry else raise end
+        rescue
+          raise if @last_request.class == Net::HTTP::Post || retries_left == 0
+          retries_left -= 1
+          retry
         end
-        if response.body and !response.body.empty?
-          object = MultiJson.load response.body
+        if body = @last_response.body and !body.empty?
+          object = MultiJson.load(body)
         end
-        if response.kind_of? Net::HTTPClientError
+        if @last_response.kind_of? Net::HTTPClientError
           raise Twilio::REST::RequestError.new object['message'], object['code']
         end
         object
