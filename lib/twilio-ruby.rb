@@ -1,51 +1,37 @@
 # frozen_string_literal: true
 
-require 'net/http'
-require 'net/https'
-require 'nokogiri'
-require 'cgi'
-require 'openssl'
-require 'base64'
 require 'forwardable'
-require 'jwt'
-require 'time'
 require 'json'
 
 require 'twilio-ruby/version' unless defined?(Twilio::VERSION)
-require 'rack/twilio_webhook_authentication'
+require 'twilio-ruby/framework'
 
-require 'twilio-ruby/util'
-require 'twilio-ruby/jwt/jwt'
-require 'twilio-ruby/jwt/access_token'
-require 'twilio-ruby/jwt/client_capability'
-require 'twilio-ruby/jwt/task_router'
-require 'twilio-ruby/security/request_validator'
-require 'twilio-ruby/util/configuration'
-
-require 'twilio-ruby/twiml/twiml'
-require 'twilio-ruby/twiml/voice_response'
-require 'twilio-ruby/twiml/messaging_response'
-
-Dir[File.dirname(__FILE__) + '/twilio-ruby/http/**/*.rb'].each do |file|
-  require file
-end
-Dir[File.dirname(__FILE__) + '/twilio-ruby/framework/**/*.rb'].each do |file|
-  require file
-end
 Dir[File.dirname(__FILE__) + '/twilio-ruby/rest/*.rb'].each do |file|
   require file
 end
 Dir[File.dirname(__FILE__) + '/twilio-ruby/rest/**/*.rb'].each do |file|
   require file
 end
-Dir[File.dirname(__FILE__) + '/twilio-ruby/compatibility/**/*.rb'].each do |file|
-  require file
-end
+
+require 'twilio-ruby/util/serialize'
+require 'twilio-ruby/util/configuration'
+require 'twilio-ruby/util'
 
 module Twilio
   extend SingleForwardable
 
   def_delegators :configuration, :account_sid, :auth_token
+
+  autoload(:TwiML, File.dirname(__FILE__) + '/twilio-ruby/twiml/twiml.rb')
+  autoload(:JWT, File.dirname(__FILE__) + '/twilio-ruby/jwt/jwt.rb')
+
+  module Security
+    autoload(:RequestValidator, File.dirname(__FILE__) + '/twilio-ruby/security/request_validator.rb')
+  end
+
+  module HTTP
+    autoload(:Client, File.dirname(__FILE__) + '/twilio-ruby/http/http_client.rb')
+  end
 
   ##
   # Pre-configure with account SID and auth token so that you don't need to
@@ -60,4 +46,9 @@ module Twilio
     @configuration ||= Util::Configuration.new
   end
   private_class_method :configuration
+end
+
+
+module Rack
+  autoload(:TwilioWebhookAuthentication, File.dirname(__FILE__) + '/rack/twilio_webhook_authentication.rb')
 end
